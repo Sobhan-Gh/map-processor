@@ -1,0 +1,41 @@
+from Map_to_N_photon_density_matrix import *
+#Solver for N photons! be wary of gobal variables, they need to be re-assigned before each use
+
+N=1 # set  number of photons
+
+#blank density matrix - it is not a density matrix in fact, but its decomposition in pauli basis- the ordering of DE and photons are as in Gershoni paper: DE-N-(N-1)- ... -2-1
+density_matrix_decom=blank_density(N)
+
+#input the process map
+#phi = 4*[4*[4*[0.25]]]
+phi=[[[0.5,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0.5]],[[0,0,0,0],[0,0.5,0,0],[0,0,0.5,0],[0,0,0,0]],\
+     [[0,0,0,-0.5],[0,0,0,0],[0,0,0,0],[-0.5,0,0,0]],[[0,0,0,0],[0,0,0.5,0],[0,-0.5,0,0],[0,0,0,0]]]
+
+#input initial state of DE or emitter
+rho0=[0.5,0.5,0,0]
+
+counter_list=(N+1)*[0] # plus one to include the emitter
+
+range_list=[]
+for i in range(N+1):
+  range_list.append((0,4))
+
+#this function fills out density_matrix_decom
+phi_filler(N,range_list,counter_list)
+counter_list=(N+1)*[0]
+
+#a list of indices to access the density matrix decomposition elements to multiple them with corresponding tensor of paulies.
+index_list=state_maker(N,range_list,counter_list)
+#a single vector of pauli 
+s=[qeye(2),sigmax(),sigmay(),sigmaz()]
+
+density_matrix=0
+for x in index_list:
+  Pauli=0.5*qeye(2)
+  for xx in x:
+    Pauli=tensor(Pauli,s[xx])
+  #remove the first initial identity matrix from the tensor product, to keep is a list of subspaces from 1 to N+1 to keep all photons and emitter
+  to_keep=[a for a in range(1,len(x)+1)]
+  Pauli=Pauli.ptrace(to_keep)
+  density_matrix=density_matrix+access(density_matrix_decom, x)*Pauli
+print(density_matrix)
